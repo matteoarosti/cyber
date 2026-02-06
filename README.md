@@ -264,3 +264,181 @@ API usate:
 </html>
 ```
 
+
+---
+
+## 9.2 `app.js`
+
+```js
+// Stato del quiz
+let correctCount = 0;
+let totalCount = 0;
+const MAX_QUESTIONS = 5;
+
+// Elementi DOM
+const btnProfile = document.getElementById("btnProfile");
+const btnQuestion = document.getElementById("btnQuestion");
+const btnReset = document.getElementById("btnReset");
+
+const loadingEl = document.getElementById("loading");
+
+const profileCard = document.getElementById("profileCard");
+const profileDiv = document.getElementById("profile");
+
+const quizCard = document.getElementById("quizCard");
+const questionDiv = document.getElementById("question");
+const answersDiv = document.getElementById("answers");
+
+const scoreP = document.getElementById("score");
+
+// Utility: mostra/nasconde un elemento
+function show(el) { el.classList.remove("hidden"); }
+function hide(el) { el.classList.add("hidden"); }
+
+// Utility: abilita/disabilita pulsanti
+function setDisabled(el, disabled) { el.disabled = disabled; }
+
+// Utility: aggiorna punteggio (testo)
+function updateScore() {
+  scoreP.textContent = `${correctCount} indovinate su ${totalCount} domande`;
+}
+
+// Utility: decodifica entità HTML (OpenTrivia manda testo con &quot; ecc.)
+function decodeHtml(html) {
+  const txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
+}
+
+// Utility: shuffle risposte
+function shuffle(arr) {
+  return arr
+    .map(x => ({ x, r: Math.random() }))
+    .sort((a, b) => a.r - b.r)
+    .map(o => o.x);
+}
+
+// Loading UI
+function setLoading(isLoading) {
+  if (isLoading) show(loadingEl); else hide(loadingEl);
+  setDisabled(btnProfile, isLoading);
+  setDisabled(btnQuestion, isLoading);
+}
+
+// 1) PROFILO RANDOM
+btnProfile.addEventListener("click", async () => {
+  setLoading(true);
+  try {
+    const r = await fetch("https://randomuser.me/api/");
+    if (!r.ok) throw new Error(`RandomUser HTTP ${r.status}`);
+
+    const d = await r.json();
+    const u = d.results[0];
+
+    // Mostra card (gestione grafica: show/hide)
+    show(profileCard);
+    show(quizCard); // sblocchiamo anche la parte quiz
+
+    // Render profilo
+    const fullName = `${u.name.first} ${u.name.last}`;
+    profileDiv.innerHTML = `
+      <div class="row">
+        <img src="${u.picture.medium}" alt="Foto profilo" width="96" height="96" />
+        <div>
+          <div><b>${fullName}</b></div>
+          <div class="muted">${u.location.country}</div>
+        </div>
+      </div>
+    `;
+
+    // Abilita “Prossima domanda”
+    setDisabled(btnQuestion, false);
+  } catch (e) {
+    alert("Errore nel caricamento del profilo: " + e.message);
+  } finally {
+    setLoading(false);
+  }
+});
+
+// 2) PROSSIMA DOMANDA
+btnQuestion.addEventListener("click", async () => {
+  if (totalCount >= MAX_QUESTIONS) return;
+
+  setLoading(true);
+  try {
+    const r = await fetch("https://opentdb.com/api.php?amount=1&type=multiple");
+    if (!r.ok) throw new Error(`OpenTrivia HTTP ${r.status}`);
+
+    const d = await r.json();
+    const q = d.results[0];
+
+    totalCount++;
+    updateScore();
+
+    // Render domanda (decodifica HTML)
+    questionDiv.textContent = decodeHtml(q.question);
+
+    // Prepara risposte + shuffle
+    const correct = decodeHtml(q.correct_answer);
+    const incorrect = q.incorrect_answers.map(decodeHtml);
+    const allAnswers = shuffle([...incorrect, correct]);
+
+    // Pulisci risposte
+    answersDiv.innerHTML = "";
+
+    // Crea bottoni risposta
+    allAnswers.forEach(ans => {
+      const b = document.createElement("button");
+      b.textContent = ans;
+
+      b.addEventListener("click", () => {
+        // Dopo una scelta: blocca tutte le risposte
+        const btns = answersDiv.querySelectorAll("button");
+        btns.forEach(x => (x.disabled = true));
+
+        // Evidenzia corretto/sbagliato con classi CSS
+        if (ans === correct) {
+          correctCount++;
+          b.classList.add("correct");
+        } else {
+          b.classList.add("wrong");
+          // evidenzia anche il corretto
+          btns.forEach(x => {
+            if (x.textContent === correct) x.classList.add("correct");
+          });
+        }
+
+        updateScore();
+
+        // Fine quiz: mostra reset
+        if (totalCount >= MAX_QUESTIONS) {
+          questionDiv.textContent += "  ✅ Fine quiz!";
+          show(btnReset);
+          setDisabled(btnQuestion, true);
+        }
+      });
+
+      answersDiv.appendChild(b);
+    });
+  } catch (e) {
+    alert("Errore nel caricamento della domanda: " + e.message);
+  } finally {
+    setLoading(false);
+  }
+});
+
+// 3) RESET
+btnReset.addEventListener("click", () => {
+  correctCount = 0;
+  totalCount = 0;
+  updateScore();
+
+  questionDiv.textContent = "Premi “Prossima domanda”";
+  answersDiv.innerHTML = "";
+
+  hide(btnReset);
+  setDisabled(btnQuestion, false);
+});
+```
+
+
