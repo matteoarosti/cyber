@@ -165,13 +165,17 @@ function renderTable(containerEl, rows) {
 
 ---
 
-8) AJAX moderno: fetch()
-fetch() è il modo moderno per fare chiamate HTTP (AJAX).
+## 8) AJAX moderno: fetch()
 
+`fetch()` è il modo moderno per fare chiamate HTTP (AJAX).
+
+```js
 const resp = await fetch("https://example.com/api");
 const data = await resp.json();
-Gestione errori (buona pratica):
+```
 
+Gestione errori (buona pratica):
+```js
 try {
   const resp = await fetch(url);
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -179,3 +183,4 @@ try {
 } catch (e) {
   console.error(e);
 }
+```
