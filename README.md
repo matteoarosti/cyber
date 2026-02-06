@@ -184,3 +184,83 @@ try {
   console.error(e);
 }
 ```
+
+
+---
+
+# 9) Esercizio finale – “Profile + Quiz” (API pubbliche)
+
+## Obiettivo
+Creare una pagina con:
+1) **Scegli profilo** → carica un profilo random (nome/cognome + foto) da **RandomUser**  
+2) Punteggio iniziale **0**  
+3) **Prossima domanda** → carica una domanda da **Open Trivia DB**  
+4) Mostra risposte come bottoni → click su una risposta  
+5) Se corretta, aumenta “indovinate”  
+6) Punteggio in formato: **3 indovinate su 5 domande**  
+7) UI: pannelli mostrati/nascosti, classi corretto/sbagliato, stato loading.
+
+API usate:
+- RandomUser: `https://randomuser.me/api/`
+- Open Trivia DB: `https://opentdb.com/api.php?amount=1&type=multiple`
+
+---
+
+## 9.1 `index.html`
+
+> Metti **app.js** nella stessa cartella.
+
+```html
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profile + Quiz</title>
+  <style>
+    body { font-family: system-ui, Arial; padding: 16px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin-top: 12px; }
+    .hidden { display: none; }
+    .muted { opacity: 0.7; }
+    .answers { display: grid; gap: 8px; margin-top: 10px; }
+    button { padding: 10px 12px; border-radius: 10px; border: 1px solid #ccc; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .correct { border-color: #2f9e44; }
+    .wrong { border-color: #e03131; }
+    img { border-radius: 12px; }
+    .badge { padding: 2px 8px; border-radius: 999px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+
+  <h1>Profile + Quiz</h1>
+
+  <div class="row">
+    <button id="btnProfile">Scegli profilo</button>
+    <button id="btnQuestion" disabled>Prossima domanda</button>
+    <span id="loading" class="badge hidden">Loading...</span>
+  </div>
+
+  <div id="profileCard" class="card hidden">
+    <h2>Profilo</h2>
+    <div id="profile"></div>
+  </div>
+
+  <div id="quizCard" class="card hidden">
+    <h2>Quiz</h2>
+    <div id="question" class="muted">Premi “Prossima domanda”</div>
+    <div id="answers" class="answers"></div>
+  </div>
+
+  <div class="card">
+    <h2>Punteggio</h2>
+    <p id="score">0 indovinate su 0 domande</p>
+    <button id="btnReset" class="hidden">Reset quiz</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+```
+
